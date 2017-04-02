@@ -8,7 +8,9 @@ module.exports = function(context, cb) {
   const url = s3.getSignedUrl('getObject', {
       Bucket: b,
       Key: k,
-      Expires: e
+      Expires: e,
+      ResponseContentType: 'text/plain',
+      ResponseContentDisposition: 'attachment; filename=' + k
   }, function (err, url) {
     cb(err, url);
   });
