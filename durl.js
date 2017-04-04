@@ -40,8 +40,9 @@ function updateStats(req, res, creds, cb) {
         TableName: table,
     };
     db.getItem(params, function (err, data) {
-        if (err) {
+        if (err || !data) {
             res.status(500).end(JSON.stringify(err));
+            return;
         }
         var count = "0";
         if (data["Item"] && data["Item"]["mgrb"]["N"]) {
