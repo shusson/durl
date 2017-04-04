@@ -2,22 +2,21 @@ var app = new (require('express'))();
 var wt = require('webtask-tools');
 
 const AWS = require('aws-sdk')
+const table = 'sgc-downloads';
+const region = 'ap-southeast-2';
+const bucket = 'sgc-garvan';
+const key = 'test.vcf';
+const expiry = 60 * 60 * 5;
 
 app.get('/', function (req, res) {
     const creds = new AWS.Credentials(req.webtaskContext.secrets.awsId, req.webtaskContext.secrets.awsSecret);
-
-    const b = 'sgc-download-test';
-    const k = 'test.vcf';
-    const e = 60 * 60 * 5;
-
-    const s3 = new AWS.S3({credentials: creds, region: 'ap-southeast-2'});
-
+    const s3 = new AWS.S3({credentials: creds, region: region});
     const url = s3.getSignedUrl('getObject', {
-        Bucket: b,
-        Key: k,
-        Expires: e,
+        Bucket: bucket,
+        Key: key,
+        Expires: expiry,
         ResponseContentType: 'text/plain',
-        ResponseContentDisposition: 'attachment; filename=' + k
+        ResponseContentDisposition: 'attachment; filename=' + key
     }, function (err, url) {
         if (err) {
             res.status(500).end(JSON.stringify(err));
@@ -30,7 +29,7 @@ app.get('/', function (req, res) {
 });
 
 function updateStats(req, res, creds, cb) {
-    var db = new AWS.DynamoDB({credentials: creds, region: 'us-west-2'});
+    var db = new AWS.DynamoDB({credentials: creds, region: region});
     var paramKey = {
         "email": {
             S: req.user.email
@@ -38,7 +37,7 @@ function updateStats(req, res, creds, cb) {
     };
     var params = {
         Key: paramKey,
-        TableName: "downloads"
+        TableName: table,
     };
     db.getItem(params, function (err, data) {
         if (err) {
@@ -58,7 +57,7 @@ function updateStats(req, res, creds, cb) {
                 }
             },
             Key: paramKey,
-            TableName: "downloads",
+            TableName: table,
             UpdateExpression: "SET #Y = :y"
         };
         db.updateItem(updateParams, function (err, updateData) {
